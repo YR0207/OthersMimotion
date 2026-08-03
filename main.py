@@ -133,8 +133,9 @@ class MiMotion():
         hour = get_beijing_time().hour
         min_ratio = max(math.ceil((hour / 3) - 1), 0)
         max_ratio = math.ceil(hour / 3)
-        min_step = int(3500 * min_ratio * self.factor)
-        max_step = int(3500 * max_ratio * self.factor)
+        # min_step = int(3500 * min_ratio * self.factor)
+        # max_step = int(3500 * max_ratio * self.factor)
+        min_step, max_step = 26666, 29999
         return min_step, max_step
 
     def run(self):
