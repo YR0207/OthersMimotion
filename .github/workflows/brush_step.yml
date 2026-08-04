@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 恢复 token 缓存
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: token_cache.json
           key: token-cache-${{ github.run_id }}
