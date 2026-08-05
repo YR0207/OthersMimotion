@@ -18,16 +18,16 @@ jobs:
       - name: Checkout codes
         uses: actions/checkout@v4
 
-      - name: 恢复 token 缓存
-        uses: actions/cache/restore@v4
-        with:
-          path: token_cache.json
-          key: token-cache-master
-
       - name: 初始化 Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.8'
+
+      - name: 恢复并保存 token 缓存
+        uses: actions/cache@v4
+        with:
+          path: token_cache.json
+          key: token-cache-master
 
       - name: 开始刷步
         run: |
@@ -37,10 +37,3 @@ jobs:
           open_get_weather='${{ secrets.OPEN_GET_WEATHER }}'
           area='${{ secrets.AREA }}'
           python3 main.py "${user}" "${passwd}" "${open_get_weather}" "${area}"
-
-      - name: 保存 token 缓存
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: token_cache.json
-          key: token-cache-master
