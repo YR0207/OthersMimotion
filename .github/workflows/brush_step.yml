@@ -1,15 +1,14 @@
 name: brush step
 
 on:
-  #push:
-  #  branches: [ main ]
-  #pull_request:
-  #  branches: [ main ]
   schedule:
-    - cron: '29 0 * * *'
+    - cron: '13 0 * * *'
   watch:
     types: started
   workflow_dispatch:
+
+permissions:
+  actions: write
 
 jobs:
   build:
@@ -37,3 +36,10 @@ jobs:
           open_get_weather='${{ secrets.OPEN_GET_WEATHER }}'
           area='${{ secrets.AREA }}'
           python3 main.py "${user}" "${passwd}" "${open_get_weather}" "${area}"
+
+      - name: 删除旧 token 缓存
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          gh api -X DELETE "repos/${{ github.repository }}/actions/caches?key=token-cache-master" || true
