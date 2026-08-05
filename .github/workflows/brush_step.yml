@@ -23,7 +23,6 @@ jobs:
         with:
           path: token_cache.json
           key: token-cache-master
-          lookup-only: true
 
       - name: 初始化 Python
         uses: actions/setup-python@v4
