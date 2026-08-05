@@ -6,7 +6,7 @@ on:
   #pull_request:
   #  branches: [ main ]
   schedule:
-    - cron: '5 0 * * *'
+    - cron: '10 0 * * *'
   watch:
     types: started
   workflow_dispatch:
@@ -22,9 +22,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: token_cache.json
-          key: token-cache-${{ github.run_id }}
-          restore-keys: |
-            token-cache-
+          key: token-cache-master
 
       - name: 初始化 Python
         uses: actions/setup-python@v4
@@ -45,4 +43,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: token_cache.json
-          key: token-cache-${{ github.run_id }}
+          key: token-cache-master
