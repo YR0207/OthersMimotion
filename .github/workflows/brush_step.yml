@@ -58,38 +58,19 @@ jobs:
           path: token_cache.json
           key: token-cache-${{ github.run_id }}
 
-      - name: 清理旧 token 缓存
+      - name: 🧹 清理旧 token 缓存
         if: always()
         env:
           GH_TOKEN: ${{ secrets.PAT }}
-          REPO: ${{ github.repository }}
           CURRENT_KEY: token-cache-${{ github.run_id }}
         run: |
-          set -euo pipefail
-
-          echo "当前保留的缓存 key: $CURRENT_KEY"
-
-          # 拉取所有 token-cache- 前缀的缓存
-          curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$REPO/actions/caches?key=token-cache-" > caches.json
-
-          # 如果缓存为空则直接退出
-          if [ "$(jq '.actions_caches | length' caches.json)" -eq 0 ]; then
-            echo "没有需要清理的旧缓存"
-            exit 0
-          fi
-
-          # 删除除 CURRENT_KEY 之外的所有缓存
-          jq -r '.actions_caches[].key' caches.json | while read -r key; do
+          caches=$(gh cache list --key token-cache- --json key --jq '.[].key')
+          for key in $caches; do
             if [ "$key" != "$CURRENT_KEY" ]; then
               echo "删除旧缓存: $key"
-              curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/$REPO/actions/caches?key=$key"
+              gh cache delete "$key" || true
             fi
           done
-
 
 
 
