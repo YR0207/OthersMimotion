@@ -272,6 +272,43 @@ class MiMotion():
         print(msg)
         return msg
 
+def _normalize_user(user: str):
+    """统一用户标识（和 MiMotion.process_user 一致）"""
+    return MiMotion.process_user(user.strip())[0]
+
+def cleanup_token_cache(cache_file: str, active_users):
+    """
+    清理 token_cache.json 中不在 active_users 中的账号
+    :param cache_file: 缓存文件路径
+    :param active_users: 本次运行有效账号列表（已标准化）
+    """
+    if not os.path.exists(cache_file):
+        return
+
+    try:
+        with open(cache_file, "r", encoding="utf-8") as f:
+            cache = json.load(f)
+        if not isinstance(cache, dict):
+            print("[缓存] 缓存格式异常，已重置为空")
+            cache = {}
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"[缓存] 读取失败: {e}")
+        return
+
+    keep = set(active_users)
+    current_keys = set(cache.keys())
+    remove_keys = current_keys - keep
+
+    if not remove_keys:
+        return
+
+    new_cache = {k: v for k, v in cache.items() if k in keep}
+    try:
+        with open(cache_file, "w", encoding="utf-8") as f:
+            json.dump(new_cache, f, ensure_ascii=False, indent=2)
+        print(f"[缓存] 清理完成，移除账号: {', '.join(sorted(remove_keys))}")
+    except IOError as e:
+        print(f"[缓存] 清理失败: {e}")
 
 # 获取当前北京时间
 def get_beijing_time():
@@ -303,17 +340,43 @@ def get_factor_by_weather(area):
             print("获取天气情况出错")
         return 1
 
+# if __name__ == "__main__":
+#     users = sys.argv[1]
+#     passwords = sys.argv[2]
+#     # 开启根据地区天气情况降低步数（默认关闭）
+#     open_get_weather = sys.argv[3]
+#     # 设置获取天气的地区（上面开启后必填）如：area = "深圳"
+#     area = sys.argv[4]
+#     factor = 1
+#     if open_get_weather == "True":
+#         factor = get_factor_by_weather(area)
+#     user_list = users.split('#')
+#     passwd_list = passwords.split('#')
+#     for user, passwd in zip(user_list, passwd_list):
+#         MiMotion(user, passwd, factor).run()
+
 if __name__ == "__main__":
     users = sys.argv[1]
     passwords = sys.argv[2]
-    # 开启根据地区天气情况降低步数（默认关闭）
     open_get_weather = sys.argv[3]
-    # 设置获取天气的地区（上面开启后必填）如：area = "深圳"
     area = sys.argv[4]
+
     factor = 1
     if open_get_weather == "True":
         factor = get_factor_by_weather(area)
-    user_list = users.split('#')
-    passwd_list = passwords.split('#')
+
+    user_list = [u.strip() for u in users.split('#') if u.strip()]
+    passwd_list = [p.strip() for p in passwords.split('#') if p.strip()]
+
+    if len(user_list) != len(passwd_list):
+        raise ValueError(f"账号与密码数量不匹配: users={len(user_list)} passwd={len(passwd_list)}")
+
+    # 统一 key，确保 +86 规范化后的 key 与缓存 key 一致
+    cache_file = os.environ.get("TOKEN_CACHE_FILE", "token_cache.json")
+    active_users = [_normalize_user(u) for u in user_list]
+
+    # 核心修复：清理不再使用的账号缓存
+    cleanup_token_cache(cache_file, active_users)
+
     for user, passwd in zip(user_list, passwd_list):
-        MiMotion(user, passwd, factor).run()
+        MiMotion(user, passwd, factor, cache_file=cache_file).run()
