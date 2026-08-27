@@ -1,0 +1,42 @@
+name: 打印当前排队Workflow任务
+on:
+  workflow_dispatch: # 手动触发测试
+  push: # 你也可以改成自己的触发条件
+jobs:
+  list-queued:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # 核心权限，读取actions运行信息
+    steps:
+      - name: 使用github-script查询排队任务
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            // 查询状态为 queued / pending 的 workflow runs
+            const result = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              status: 'queued,pending',
+              per_page: 100
+            });
+            const runs = result.data.workflow_runs;
+            console.log(`✅ 当前仓库排队任务总数：${runs.length}`);
+            for(const run of runs){
+              console.log(`---------------------------`)
+              console.log(`RunID: ${run.id}`)
+              console.log(`工作流名称: ${run.name}`)
+              console.log(`分支: ${run.head_branch}`)
+              console.log(`状态: ${run.status}`)
+              console.log(`创建时间: ${run.created_at}`)
+              console.log(`链接: ${run.html_url}`)
+            }
+            // 进阶：遍历每个run里面的job（job粒度排队信息）
+            /*
+            for(const run of runs){
+              const jobsRes = await github.rest.actions.listJobsForWorkflowRun({
+                owner,repo,run_id:run.id
+              })
+              console.log("👉 当前run内job列表：", jobsRes.data.jobs)
+            }
+            */
