@@ -29,7 +29,7 @@ jobs:
       - name: 初始化 Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
       - name: 开始刷步
         run: |
